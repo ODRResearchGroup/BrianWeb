@@ -19,16 +19,20 @@ const ESS_SERVICE_UUID = 0x181a;
 // Custom Service UUID
 const CUSTOM_SERVICE_UUID = 'de664a17-7db4-449f-97ba-5514e19a9d94';
 
-// ESS Characteristics
+// ESS Characteristics (from Environmental Sensing Service)
 const ESS_CHARACTERISTICS = [
   { uuid: 0x2bd1, name: 'CH4 (Methane)' },
   { uuid: 0x2bd3, name: 'VOC (Volatile Organic Compounds)' },
   { uuid: 0x2bcf, name: 'NH3 (Ammonia)' },
   { uuid: 0x2bd2, name: 'NO2 (Nitrogen Dioxide)' },
-  { uuid: 0x2bdf, name: 'HCHO (Formaldehyde)' },
-  { uuid: 0x2be3, name: 'Odor' },
-  { uuid: 0x2be4, name: 'EtOH (Ethanol)' },
-  { uuid: 0x2be5, name: 'H2S (Hydrogen Sulfide)' },
+];
+
+// Custom Service Characteristics
+const CUSTOM_CHARACTERISTICS = [
+  { uuid: '6a135b89-f360-4f64-86fc-5a14092034b4', name: 'HCHO (Formaldehyde)' },
+  { uuid: '4c28fcb8-d69b-404a-8668-41655d814e7f', name: 'Odor' },
+  { uuid: 'f8156843-6d98-4ba2-8014-1cf03d7dedb8', name: 'EtOH (Ethanol)' },
+  { uuid: '87dc71bd-29a4-4218-a2a7-83fd2a69cc40', name: 'H2S (Hydrogen Sulfide)' },
 ];
 
 export const useBLE = () => {
@@ -51,9 +55,9 @@ export const useBLE = () => {
       const server = await bluetoothDevice.gatt?.connect();
       if (!server) throw new Error('Failed to connect to GATT server');
 
-      // Fetch ESS service and characteristics
       const characteristics: BLECharacteristicData[] = [];
       
+      // Fetch ESS service and its characteristics
       try {
         const essService = await server.getPrimaryService(ESS_SERVICE_UUID);
         
@@ -67,43 +71,36 @@ export const useBLE = () => {
               value: null
             });
             
-            // Start listening for notifications
-            if (characteristic.properties.notify) {
-              characteristic.addEventListener('characteristicvaluechanged', (event: Event) => {
-                const value = (event.target as BluetoothRemoteGATTCharacteristic).value;
-                if (value) {
-                  const numValue = parseFloat32(value);
-                  
-                  // Update characteristic value
-                  setDevice((prevDevice) => {
-                    if (!prevDevice) return null;
-                    return {
-                      ...prevDevice,
-                      characteristics: prevDevice.characteristics.map((c) =>
-                        c.uuid === `0x${charConfig.uuid.toString(16)}` ? { ...c, value: numValue } : c
-                      )
-                    };
-                  });
-                  
-                  // Add to data points
-                  setDataPoints((prev) => {
-                    const newPoints = [
-                      ...prev,
-                      { x: prev.length, y: numValue, sensorId: charConfig.name }
-                    ];
-                    return newPoints.slice(-500); // Keep last 500 points
-                  });
-                }
-              });
-              
-              await characteristic.startNotifications();
-            }
+            attachNotificationListener(characteristic, charConfig.name);
           } catch (e) {
-            console.warn(`Could not retrieve characteristic ${charConfig.name}:`, e);
+            console.warn(`Could not retrieve ESS characteristic ${charConfig.name}:`, e);
           }
         }
       } catch (e) {
         console.warn('Could not retrieve ESS service:', e);
+      }
+      
+      // Fetch Custom service and its characteristics
+      try {
+        const customService = await server.getPrimaryService(CUSTOM_SERVICE_UUID);
+        
+        for (const charConfig of CUSTOM_CHARACTERISTICS) {
+          try {
+            const characteristic = await customService.getCharacteristic(charConfig.uuid);
+            characteristics.push({
+              uuid: charConfig.uuid,
+              name: charConfig.name,
+              characteristic,
+              value: null
+            });
+            
+            attachNotificationListener(characteristic, charConfig.name);
+          } catch (e) {
+            console.warn(`Could not retrieve Custom characteristic ${charConfig.name}:`, e);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not retrieve Custom service:', e);
       }
 
       setDevice({
@@ -125,6 +122,41 @@ export const useBLE = () => {
       return value.getFloat32(0, true); // true for little-endian
     }
     return 0;
+  };
+
+  const attachNotificationListener = (characteristic: BluetoothRemoteGATTCharacteristic, sensorName: string) => {
+    if (characteristic.properties.notify) {
+      characteristic.addEventListener('characteristicvaluechanged', (event: Event) => {
+        const value = (event.target as BluetoothRemoteGATTCharacteristic).value;
+        if (value) {
+          const numValue = parseFloat32(value);
+          
+          // Update characteristic value
+          setDevice((prevDevice) => {
+            if (!prevDevice) return null;
+            return {
+              ...prevDevice,
+              characteristics: prevDevice.characteristics.map((c) =>
+                c.name === sensorName ? { ...c, value: numValue } : c
+              )
+            };
+          });
+          
+          // Add to data points
+          setDataPoints((prev) => {
+            const newPoints = [
+              ...prev,
+              { x: prev.length, y: numValue, sensorId: sensorName }
+            ];
+            return newPoints.slice(-500); // Keep last 500 points
+          });
+        }
+      });
+      
+      characteristic.startNotifications().catch((e) => {
+        console.warn(`Failed to start notifications for ${sensorName}:`, e);
+      });
+    }
   };
 
   const disconnect = useCallback(async () => {
