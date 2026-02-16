@@ -62,12 +62,22 @@ function App() {
               <p>
                 <strong>Data Points Received:</strong> {dataPoints?.length || 0}
               </p>
-              {dataPoints && dataPoints.length > 0 && (
-                <p>
-                  <strong>Latest Value:</strong>{" "}
-                  {dataPoints[dataPoints.length - 1]?.y || "N/A"}
-                </p>
-              )}
+
+              {device &&
+                device.characteristics &&
+                device.characteristics.length > 0 && (
+                  <div className="characteristics-list">
+                    <h3>Sensor Values</h3>
+                    {device.characteristics.map((char) => (
+                      <div key={char.uuid} className="characteristic-item">
+                        <span className="char-name">{char.name}</span>
+                        <span className="char-value">
+                          {char.value !== null ? char.value.toFixed(4) : "N/A"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
           </div>
 
