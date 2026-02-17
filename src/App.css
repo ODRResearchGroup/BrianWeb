@@ -204,6 +204,38 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.plot-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #f5f5f5;
+  color: #555;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  background: #e9e9e9;
+}
+
+.tab-button.active {
+  background: #667eea;
+  color: white;
+}
+
+.plot-content {
+  min-height: 500px;
+}
+
 .no-data {
   height: 500px;
   display: flex;

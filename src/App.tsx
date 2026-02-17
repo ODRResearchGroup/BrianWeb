@@ -1,11 +1,15 @@
 import "./App.css";
+import { useState } from "react";
 import { useBLE } from "./useBLE";
-import { DataPlot } from "./DataPlot";
+import { LinePlot } from "./LinePlot";
+import { BarPlot } from "./BarPlot";
+import { RadarPlot } from "./RadarPlot";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 function App() {
   const { device, isConnected, error, dataPoints, requestDevice, disconnect } =
     useBLE();
+  const [activeTab, setActiveTab] = useState<"radar" | "line" | "bar">("radar");
 
   return (
     <ErrorBoundary>
@@ -82,13 +86,45 @@ function App() {
           </div>
 
           <div className="plot-container">
-            {isConnected && dataPoints && dataPoints.length > 0 ? (
-              <DataPlot dataPoints={dataPoints} deviceName={device?.name} />
-            ) : (
-              <div className="no-data">
-                <p>Connect to a BLE device to start viewing data</p>
-              </div>
-            )}
+            <div className="plot-tabs">
+              <button
+                className={`tab-button ${activeTab === "radar" ? "active" : ""}`}
+                onClick={() => setActiveTab("radar")}
+              >
+                Radar Plot
+              </button>
+              <button
+                className={`tab-button ${activeTab === "line" ? "active" : ""}`}
+                onClick={() => setActiveTab("line")}
+              >
+                Line Graphs
+              </button>
+              <button
+                className={`tab-button ${activeTab === "bar" ? "active" : ""}`}
+                onClick={() => setActiveTab("bar")}
+              >
+                Bar Graphs
+              </button>
+            </div>
+
+            <div className="plot-content">
+              {isConnected && dataPoints && dataPoints.length > 0 ? (
+                activeTab === "line" ? (
+                  <LinePlot dataPoints={dataPoints} deviceName={device?.name} />
+                ) : activeTab === "bar" ? (
+                  <BarPlot dataPoints={dataPoints} deviceName={device?.name} />
+                ) : (
+                  <RadarPlot
+                    dataPoints={dataPoints}
+                    deviceName={device?.name}
+                  />
+                )
+              ) : (
+                <div className="no-data">
+                  <p>Connect to a BLE device to start viewing data</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
