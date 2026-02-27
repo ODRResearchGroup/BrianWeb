@@ -2,6 +2,8 @@
 
 A React web application that connects to an ESP32 BLE gas sensor device and visualizes real-time multi-sensor data using interactive Plotly charts.
 
+Live Version: https://odrresearchgroup.github.io/BrianWeb/
+
 ## Features
 
 - **Multi-Sensor Support**: Simultaneously reads data from 8 different gas sensors via BLE
