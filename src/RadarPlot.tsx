@@ -5,16 +5,21 @@ interface DataPoint {
   x: number;
   y: number;
   sensorId: string;
+  group?: "environmental" | "mems";
 }
 
 interface RadarPlotProps {
   dataPoints: Array<DataPoint>;
   deviceName?: string;
+  plotTitle?: string;
+  emptyMessage?: string;
 }
 
 export const RadarPlot = ({
   dataPoints,
   deviceName = "BLE Device",
+  plotTitle,
+  emptyMessage = "No data to display",
 }: RadarPlotProps) => {
   const plotRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +56,7 @@ export const RadarPlot = ({
     };
 
     const layout = {
-      title: `Radar View - ${deviceName || "Device"}`,
+      title: plotTitle || `Radar View - ${deviceName || "Device"}`,
       polar: {
         radialaxis: {
           visible: true,
@@ -63,12 +68,12 @@ export const RadarPlot = ({
     };
 
     Plotly.newPlot(plotRef.current, [trace], layout, { responsive: true });
-  }, [labels, values, deviceName]);
+  }, [labels, values, deviceName, plotTitle]);
 
   if (labels.length === 0) {
     return (
       <div style={{ width: "100%", height: "500px", color: "#999" }}>
-        <p>No data to display</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

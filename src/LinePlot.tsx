@@ -5,14 +5,20 @@ interface DataPoint {
   x: number;
   y: number;
   sensorId: string;
+  group?: "environmental" | "mems";
 }
 
 interface LinePlotProps {
   dataPoints: Array<DataPoint>;
   deviceName?: string;
+  plotTitle?: string;
+  emptyMessage?: string;
 }
 
 const SENSOR_COLORS: Record<string, string> = {
+  "Temperature (BME680)": "rgb(255, 99, 132)",
+  "Humidity (BME680)": "rgb(54, 162, 235)",
+  "Pressure (BME680)": "rgb(255, 206, 86)",
   "CH4 (Methane)": "rgb(31, 119, 180)",
   "VOC (Volatile Organic Compounds)": "rgb(255, 127, 14)",
   "NH3 (Ammonia)": "rgb(44, 160, 44)",
@@ -26,6 +32,8 @@ const SENSOR_COLORS: Record<string, string> = {
 export const LinePlot = ({
   dataPoints,
   deviceName = "BLE Device",
+  plotTitle,
+  emptyMessage = "No data to display",
 }: LinePlotProps) => {
   const plotRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +78,7 @@ export const LinePlot = ({
     }
 
     const layout = {
-      title: `Real-time Gas Sensor Data from ${deviceName || "Device"}`,
+      title: plotTitle || `Real-time Sensor Data from ${deviceName || "Device"}`,
       xaxis: {
         title: "Data Points",
       },
@@ -88,12 +96,12 @@ export const LinePlot = ({
     };
 
     Plotly.newPlot(plotRef.current, traces, layout, { responsive: true });
-  }, [traces, deviceName]);
+  }, [traces, deviceName, plotTitle]);
 
   if (traces.length === 0) {
     return (
       <div style={{ width: "100%", height: "500px", color: "#999" }}>
-        <p>No data to display</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

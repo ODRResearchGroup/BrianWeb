@@ -142,6 +142,23 @@
   opacity: 0.6;
 }
 
+.btn-download {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-download:hover:not(:disabled) {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.btn-download:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .data-info {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -234,6 +251,24 @@
 
 .plot-content {
   min-height: 500px;
+}
+
+.plot-sections {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.plot-section {
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #fcfcfc;
+}
+
+.plot-section h3 {
+  margin: 0 0 0.75rem;
+  color: #333;
+  font-size: 1rem;
 }
 
 .no-data {
