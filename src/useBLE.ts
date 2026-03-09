@@ -22,10 +22,14 @@ const ESS_SERVICE_UUID = 0x181a;
 // Custom Service UUID
 const CUSTOM_SERVICE_UUID = 'de664a17-7db4-449f-97ba-5514e19a9d94';
 
+// Time Sync Characteristic UUID - update this with your device's time sync characteristic UUID
+const TIME_SYNC_CHAR_UUID = 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d'; // Current Time characteristic
+
 const ESS_UUID_NAME_MAP: Record<string, string> = {
   '00002a6e-0000-1000-8000-00805f9b34fb': 'Temperature (BME680)',
   '00002a6f-0000-1000-8000-00805f9b34fb': 'Humidity (BME680)',
   '00002a6d-0000-1000-8000-00805f9b34fb': 'Pressure (BME680)',
+  '00002a69-0000-1000-8000-00805f9b34fb': 'Altitude (BME680)',
   '00002bd1-0000-1000-8000-00805f9b34fb': 'CH4 (Methane)',
   '00002bd3-0000-1000-8000-00805f9b34fb': 'VOC (Volatile Organic Compounds)',
   '00002bcf-0000-1000-8000-00805f9b34fb': 'NH3 (Ammonia)',
@@ -37,6 +41,10 @@ const CUSTOM_UUID_NAME_MAP: Record<string, string> = {
   '4c28fcb8-d69b-404a-8668-41655d814e7f': 'Odor',
   'f8156843-6d98-4ba2-8014-1cf03d7dedb8': 'EtOH (Ethanol)',
   '87dc71bd-29a4-4218-a2a7-83fd2a69cc40': 'H2S (Hydrogen Sulfide)',
+  '88f6fa6c-c4e0-4a3d-ba72-f435641251c4': 'CO (Carbon Monoxide)',
+  'cafb955e-6e7b-424b-9e03-6d8d003aa286': 'Smoke',
+  '0176655b-0007-4e02-abc1-e9f2d6815f46': 'H2 (Hydrogen)',
+  '5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9': 'Gas Resistance',
 };
 
 const MEMS_ESS_UUIDS = new Set([
@@ -44,6 +52,10 @@ const MEMS_ESS_UUIDS = new Set([
   '00002bd3-0000-1000-8000-00805f9b34fb',
   '00002bcf-0000-1000-8000-00805f9b34fb',
   '00002bd2-0000-1000-8000-00805f9b34fb',
+]);
+
+const ENVIRONMENTAL_CUSTOM_UUIDS = new Set([
+  '5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9'//: 'Gas Resistance',
 ]);
 
 export const useBLE = () => {
@@ -57,12 +69,39 @@ export const useBLE = () => {
     try {
       setError(null);
       const bluetoothDevice = await (navigator as any).bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [ESS_SERVICE_UUID, CUSTOM_SERVICE_UUID, 'generic_access', 'generic_attribute']
+        filters: [
+          { name: 'BRIAN' },
+          { name: 'esp32' }
+        ],
+        optionalServices: [ESS_SERVICE_UUID, CUSTOM_SERVICE_UUID, TIME_SYNC_CHAR_UUID, 'generic_access', 'generic_attribute']
       });
 
       const server = await bluetoothDevice.gatt?.connect();
       if (!server) throw new Error('Failed to connect to GATT server');
+
+      // Sync timestamp with the device
+      try {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const buffer = new ArrayBuffer(8);
+        const view = new DataView(buffer);
+        view.setBigUint64(0, BigInt(timestamp), true);  // little-endian
+        
+        // Try to find and write to the time sync characteristic
+        const services = await server.getPrimaryServices();
+        for (const service of services) {
+          try {
+            const timeSyncChar = await service.getCharacteristic(TIME_SYNC_CHAR_UUID);
+            await timeSyncChar.writeValue(buffer);
+            console.log('Successfully synced timestamp with device:', timestamp);
+            break;
+          } catch (e) {
+            // Continue searching in other services
+          }
+        }
+      } catch (e) {
+        console.warn('Could not sync timestamp with device:', e);
+        // Continue connecting even if time sync fails
+      }
 
       const characteristics: BLECharacteristicData[] = [];
       const characteristicsToSubscribe: BLECharacteristicData[] = [];
@@ -75,12 +114,19 @@ export const useBLE = () => {
 
         for (const characteristic of discovered) {
           const normalizedUuid = characteristic.uuid.toLowerCase();
+
+          // Time sync is a control characteristic, not a sensor stream.
+          // Keep it out of sensor lists/plots/subscriptions.
+          if (normalizedUuid === TIME_SYNC_CHAR_UUID.toLowerCase()) {
+            continue;
+          }
+
           const defaultName = `${serviceType.toUpperCase()} ${normalizedUuid.slice(0, 8)}`;
           const nameMap = serviceType === 'ess' ? ESS_UUID_NAME_MAP : CUSTOM_UUID_NAME_MAP;
           const resolvedName = nameMap[normalizedUuid] || defaultName;
 
           const group: DataGroup = serviceType === 'custom'
-            ? 'mems'
+            ? (ENVIRONMENTAL_CUSTOM_UUIDS.has(normalizedUuid) ? 'environmental' : 'mems')
             : MEMS_ESS_UUIDS.has(normalizedUuid)
               ? 'mems'
               : 'environmental';
@@ -92,6 +138,16 @@ export const useBLE = () => {
             characteristic,
             value: null
           };
+
+          // Diagnostic logging
+          console.log(`Discovered characteristic: ${resolvedName} (${normalizedUuid})`);
+          console.log(`  Properties:`, {
+            read: characteristic.properties.read,
+            write: characteristic.properties.write,
+            writeWithoutResponse: characteristic.properties.writeWithoutResponse,
+            notify: characteristic.properties.notify,
+            indicate: characteristic.properties.indicate
+          });
 
           characteristics.push(characteristicData);
           characteristicsToSubscribe.push(characteristicData);
@@ -167,6 +223,15 @@ export const useBLE = () => {
 
   const recordValue = (sensorName: string, group: DataGroup, uuid: string, rawValue: DataView) => {
     const numValue = parseFloat32(rawValue);
+    
+    // Diagnostic logging for BME680 sensors
+    if (sensorName.includes('Temperature') || sensorName.includes('Pressure') || sensorName.includes('Humidity')) {
+      console.log(`[${sensorName}] Received ${rawValue.byteLength} bytes, parsed value: ${numValue}`, {
+        hex: Array.from(new Uint8Array(rawValue.buffer, rawValue.byteOffset, rawValue.byteLength))
+          .map(b => '0x' + b.toString(16).padStart(2, '0'))
+          .join(' ')
+      });
+    }
 
     setDevice((prevDevice) => {
       if (!prevDevice) return null;
@@ -183,7 +248,7 @@ export const useBLE = () => {
         ...prev,
         { x: prev.length, y: numValue, sensorId: sensorName, group }
       ];
-      return newPoints.slice(-500);
+      return newPoints.slice(-2000);
     });
 
     setAllDataPoints((prev) => [
@@ -214,8 +279,20 @@ export const useBLE = () => {
         }
       });
       
-      characteristic.startNotifications().catch((e) => {
-        console.warn(`Failed to start notifications for ${sensorName}:`, e);
+      characteristic.startNotifications().then(() => {
+        console.log(`Successfully subscribed to notifications for ${sensorName}`);
+      }).catch((e) => {
+        console.error(`Failed to start notifications for ${sensorName}:`, {
+          name: e.name,
+          message: e.message,
+          uuid: uuid,
+          properties: characteristic.properties
+        });
+      });
+    } else {
+      console.warn(`Characteristic ${sensorName} does not support notifications`, {
+        uuid: uuid,
+        properties: characteristic.properties
       });
     }
   };

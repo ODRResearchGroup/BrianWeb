@@ -19,15 +19,26 @@ function App() {
   } = useBLE();
   const [activeTab, setActiveTab] = useState<"radar" | "line" | "bar">("radar");
 
+  const excludedEnvironmentalSensors = new Set([
+    "Altitude (BME680)",
+    "Gas Resistance",
+  ]);
+
   const environmentalData = dataPoints.filter(
-    (point) => point.group === "environmental",
+    (point) =>
+      point.group === "environmental" &&
+      !excludedEnvironmentalSensors.has(point.sensorId),
   );
   const memsData = dataPoints.filter((point) => point.group === "mems");
 
   const environmentalCharacteristics =
-    device?.characteristics.filter((characteristic) => characteristic.group === "environmental") || [];
+    device?.characteristics.filter(
+      (characteristic) => characteristic.group === "environmental",
+    ) || [];
   const memsCharacteristics =
-    device?.characteristics.filter((characteristic) => characteristic.group === "mems") || [];
+    device?.characteristics.filter(
+      (characteristic) => characteristic.group === "mems",
+    ) || [];
 
   const renderPlot = (
     points: typeof dataPoints,
@@ -133,7 +144,8 @@ function App() {
                 <strong>Plot Buffer:</strong> {dataPoints?.length || 0}
               </p>
               <p>
-                <strong>Environmental Points:</strong> {environmentalData.length}
+                <strong>Environmental Points:</strong>{" "}
+                {environmentalData.length}
               </p>
               <p>
                 <strong>MEMS Points:</strong> {memsData.length}

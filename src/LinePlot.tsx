@@ -15,6 +15,8 @@ interface LinePlotProps {
   emptyMessage?: string;
 }
 
+const PRESSURE_SENSOR_ID = "Pressure (BME680)";
+
 const SENSOR_COLORS: Record<string, string> = {
   "Temperature (BME680)": "rgb(255, 99, 132)",
   "Humidity (BME680)": "rgb(54, 162, 235)",
@@ -54,13 +56,15 @@ export const LinePlot = ({
       data.y.push(point.y);
     });
 
-    // Create traces for each sensor
+    // Create traces for each sensor.
+    // Pressure is routed to a secondary y-axis to improve readability.
     return Array.from(sensorMap.entries()).map(([sensorId, data]) => ({
       x: data.x,
       y: data.y,
       type: "scatter" as const,
       mode: "lines+markers" as const,
       name: sensorId,
+      yaxis: sensorId === PRESSURE_SENSOR_ID ? "y2" : "y",
       line: {
         color: SENSOR_COLORS[sensorId] || "rgb(100, 100, 100)",
         width: 2,
@@ -77,22 +81,37 @@ export const LinePlot = ({
       return;
     }
 
+    const hasPressureTrace = traces.some(
+      (trace) => trace.name === PRESSURE_SENSOR_ID,
+    );
+
     const layout = {
-      title: plotTitle || `Real-time Sensor Data from ${deviceName || "Device"}`,
+      title:
+        plotTitle || `Real-time Sensor Data from ${deviceName || "Device"}`,
       xaxis: {
         title: "Data Points",
       },
       yaxis: {
-        title: "Voltage (V)",
+        title: hasPressureTrace ? "Sensor Value" : "Voltage (V)",
       },
       hovermode: "closest" as const,
-      margin: { l: 60, r: 50, t: 50, b: 50 },
+      margin: { l: 60, r: hasPressureTrace ? 80 : 50, t: 50, b: 50 },
       legend: {
         x: 1.02,
         y: 1,
         xanchor: "left" as const,
         yanchor: "top" as const,
       },
+      ...(hasPressureTrace
+        ? {
+            yaxis2: {
+              title: "Pressure (hPa)",
+              overlaying: "y" as const,
+              side: "right" as const,
+              anchor: "x" as const,
+            },
+          }
+        : {}),
     };
 
     Plotly.newPlot(plotRef.current, traces, layout, { responsive: true });
