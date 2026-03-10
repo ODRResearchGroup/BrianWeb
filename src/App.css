@@ -284,6 +284,65 @@
   border-radius: 8px;
 }
 
+/* ---- LinePlot wrapper ---- */
+.line-plot {
+  width: 100%;
+}
+
+.line-plot__canvas {
+  width: 100%;
+  height: 500px;
+}
+
+/* ---- MEMS settling status bar ---- */
+.mems-settling-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 4px;
+  margin-bottom: 4px;
+}
+
+.mems-settling-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: sans-serif;
+}
+
+.mems-settling-badge--settled {
+  background: rgba(44, 160, 44, 0.12);
+  border: 1px solid rgb(44, 160, 44);
+}
+
+.mems-settling-badge--unsettled {
+  background: rgba(214, 39, 40, 0.12);
+  border: 1px solid rgb(214, 39, 40);
+}
+
+.mems-settling-badge__label {
+  font-weight: 600;
+  color: #444;
+}
+
+.mems-settling-badge__status--settled {
+  font-weight: 600;
+  color: rgb(44, 160, 44);
+}
+
+.mems-settling-badge__status--unsettled {
+  font-weight: 600;
+  color: rgb(214, 39, 40);
+}
+
+.mems-settling-badge__variance {
+  color: #888;
+  font-size: 11px;
+}
+
 @media (max-width: 1024px) {
   .app-content {
     grid-template-columns: 1fr;
