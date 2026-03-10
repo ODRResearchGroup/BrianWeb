@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import { useMemo, useEffect } from "react";
+import { usePlotlyLive } from "./usePlotlyLive";
 
 interface DataPoint {
   x: number;
@@ -35,7 +35,7 @@ export const BarPlot = ({
   plotTitle,
   emptyMessage = "No data to display",
 }: BarPlotProps) => {
-  const plotRef = useRef<HTMLDivElement>(null);
+  const { plotRef, renderOrUpdate } = usePlotlyLive();
 
   const { labels, values, colors } = useMemo(() => {
     if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
@@ -83,7 +83,16 @@ export const BarPlot = ({
       margin: { l: 60, r: 50, t: 50, b: 80 },
     };
 
-    Plotly.newPlot(plotRef.current, [trace], layout, { responsive: true });
+    renderOrUpdate({
+      traces: [trace],
+      layout,
+      updateData: {
+        x: [[...labels]],
+        y: [[...values]],
+        "marker.color": [[...colors]],
+      },
+      traceIndices: [0],
+    });
   }, [labels, values, colors, deviceName, plotTitle]);
 
   if (labels.length === 0) {

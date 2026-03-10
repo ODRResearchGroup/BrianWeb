@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import { useMemo, useEffect } from "react";
+import { usePlotlyLive } from "./usePlotlyLive";
 
 interface DataPoint {
   x: number;
@@ -21,7 +21,7 @@ export const RadarPlot = ({
   plotTitle,
   emptyMessage = "No data to display",
 }: RadarPlotProps) => {
-  const plotRef = useRef<HTMLDivElement>(null);
+  const { plotRef, renderOrUpdate } = usePlotlyLive();
 
   const { labels, values } = useMemo(() => {
     if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
@@ -67,7 +67,15 @@ export const RadarPlot = ({
       showlegend: false,
     };
 
-    Plotly.newPlot(plotRef.current, [trace], layout, { responsive: true });
+    renderOrUpdate({
+      traces: [trace],
+      layout,
+      updateData: {
+        r: [[...values]],
+        theta: [[...labels]],
+      },
+      traceIndices: [0],
+    });
   }, [labels, values, deviceName, plotTitle]);
 
   if (labels.length === 0) {

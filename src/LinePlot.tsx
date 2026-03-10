@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import { useMemo, useEffect } from "react";
+import { usePlotlyLive } from "./usePlotlyLive";
 
 interface DataPoint {
   x: number;
@@ -37,7 +37,7 @@ export const LinePlot = ({
   plotTitle,
   emptyMessage = "No data to display",
 }: LinePlotProps) => {
-  const plotRef = useRef<HTMLDivElement>(null);
+  const { plotRef, getTraceCount, renderOrUpdate } = usePlotlyLive();
 
   const traces = useMemo(() => {
     if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
@@ -114,7 +114,18 @@ export const LinePlot = ({
         : {}),
     };
 
-    Plotly.newPlot(plotRef.current, traces, layout, { responsive: true });
+    const existingTraceCount = getTraceCount();
+
+    renderOrUpdate({
+      traces,
+      layout,
+      updateData: {
+        x: traces.map((trace) => trace.x),
+        y: traces.map((trace) => trace.y),
+      },
+      traceIndices: traces.map((_, index) => index),
+      forceReact: existingTraceCount !== traces.length,
+    });
   }, [traces, deviceName, plotTitle]);
 
   if (traces.length === 0) {

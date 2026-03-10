@@ -52,6 +52,13 @@ declare module 'plotly.js-dist-min' {
       layout?: Layout,
       config?: Config
     ): Promise<HTMLElement>;
+    update(
+      div: HTMLElement | string,
+      data_update?: Record<string, any>,
+      layout_update?: Record<string, any>,
+      traceIndices?: number[]
+    ): Promise<HTMLElement>;
+    purge(div: HTMLElement | string): void;
     [key: string]: any;
   }
 
