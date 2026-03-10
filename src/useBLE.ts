@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 type DataGroup = 'environmental' | 'mems';
 
@@ -58,12 +58,15 @@ const ENVIRONMENTAL_CUSTOM_UUIDS = new Set([
   '5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9'//: 'Gas Resistance',
 ]);
 
+const MAX_PLOT_POINTS = 1000;
+
 export const useBLE = () => {
   const [device, setDevice] = useState<BLEDevice | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataPoints, setDataPoints] = useState<Array<{ x: number; y: number; sensorId: string; group: DataGroup }>>([]);
   const [allDataPoints, setAllDataPoints] = useState<Array<{ timestamp: number; sensorId: string; group: DataGroup; value: number }>>([]);
+  const sampleIndexRef = useRef(0);
 
   const requestDevice = useCallback(async () => {
     try {
@@ -244,11 +247,14 @@ export const useBLE = () => {
     });
 
     setDataPoints((prev) => {
+      const nextSampleIndex = sampleIndexRef.current;
+      sampleIndexRef.current += 1;
+
       const newPoints = [
         ...prev,
-        { x: prev.length, y: numValue, sensorId: sensorName, group }
+        { x: nextSampleIndex, y: numValue, sensorId: sensorName, group }
       ];
-      return newPoints.slice(-2000);
+      return newPoints.slice(-MAX_PLOT_POINTS);
     });
 
     setAllDataPoints((prev) => [
@@ -306,6 +312,7 @@ export const useBLE = () => {
         setDevice(null);
         setDataPoints([]);
         setAllDataPoints([]);
+        sampleIndexRef.current = 0;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to disconnect');
       }
