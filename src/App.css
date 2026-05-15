@@ -273,6 +273,40 @@
   font-size: 1rem;
 }
 
+.plot-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.plot-section-header h3 {
+  margin: 0;
+}
+
+.section-toggle-btn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #d0d6e8;
+  background: #f4f7ff;
+  color: #334;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.section-toggle-btn:hover {
+  background: #e8efff;
+}
+
+.section-toggle-btn.active {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+}
+
 .no-data {
   height: 500px;
   display: flex;
