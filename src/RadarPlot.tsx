@@ -1,22 +1,27 @@
-import { useMemo, useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import { useMemo, useEffect } from "react";
+import { usePlotlyLive } from "./usePlotlyLive";
 
 interface DataPoint {
   x: number;
   y: number;
   sensorId: string;
+  group?: "environmental" | "mems";
 }
 
 interface RadarPlotProps {
   dataPoints: Array<DataPoint>;
   deviceName?: string;
+  plotTitle?: string;
+  emptyMessage?: string;
 }
 
 export const RadarPlot = ({
   dataPoints,
   deviceName = "BLE Device",
+  plotTitle,
+  emptyMessage = "No data to display",
 }: RadarPlotProps) => {
-  const plotRef = useRef<HTMLDivElement>(null);
+  const { plotRef, renderOrUpdate } = usePlotlyLive();
 
   const { labels, values } = useMemo(() => {
     if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
@@ -51,7 +56,7 @@ export const RadarPlot = ({
     };
 
     const layout = {
-      title: `Radar View - ${deviceName || "Device"}`,
+      title: plotTitle || `Radar View - ${deviceName || "Device"}`,
       polar: {
         radialaxis: {
           visible: true,
@@ -62,13 +67,21 @@ export const RadarPlot = ({
       showlegend: false,
     };
 
-    Plotly.newPlot(plotRef.current, [trace], layout, { responsive: true });
-  }, [labels, values, deviceName]);
+    renderOrUpdate({
+      traces: [trace],
+      layout,
+      updateData: {
+        r: [[...values]],
+        theta: [[...labels]],
+      },
+      traceIndices: [0],
+    });
+  }, [labels, values, deviceName, plotTitle]);
 
   if (labels.length === 0) {
     return (
       <div style={{ width: "100%", height: "500px", color: "#999" }}>
-        <p>No data to display</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

@@ -142,6 +142,23 @@
   opacity: 0.6;
 }
 
+.btn-download {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-download:hover:not(:disabled) {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.btn-download:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .data-info {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -236,6 +253,60 @@
   min-height: 500px;
 }
 
+.plot-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.plot-section {
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #fcfcfc;
+}
+
+.plot-section h3 {
+  margin: 0 0 0.75rem;
+  color: #333;
+  font-size: 1rem;
+}
+
+.plot-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.plot-section-header h3 {
+  margin: 0;
+}
+
+.section-toggle-btn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #d0d6e8;
+  background: #f4f7ff;
+  color: #334;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.section-toggle-btn:hover {
+  background: #e8efff;
+}
+
+.section-toggle-btn.active {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+}
+
 .no-data {
   height: 500px;
   display: flex;
@@ -245,6 +316,65 @@
   font-size: 1.1rem;
   background: #f9f9f9;
   border-radius: 8px;
+}
+
+/* ---- LinePlot wrapper ---- */
+.line-plot {
+  width: 100%;
+}
+
+.line-plot__canvas {
+  width: 100%;
+  height: 500px;
+}
+
+/* ---- MEMS settling status bar ---- */
+.mems-settling-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 4px;
+  margin-bottom: 4px;
+}
+
+.mems-settling-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: sans-serif;
+}
+
+.mems-settling-badge--settled {
+  background: rgba(44, 160, 44, 0.12);
+  border: 1px solid rgb(44, 160, 44);
+}
+
+.mems-settling-badge--unsettled {
+  background: rgba(214, 39, 40, 0.12);
+  border: 1px solid rgb(214, 39, 40);
+}
+
+.mems-settling-badge__label {
+  font-weight: 600;
+  color: #444;
+}
+
+.mems-settling-badge__status--settled {
+  font-weight: 600;
+  color: rgb(44, 160, 44);
+}
+
+.mems-settling-badge__status--unsettled {
+  font-weight: 600;
+  color: rgb(214, 39, 40);
+}
+
+.mems-settling-badge__variance {
+  color: #888;
+  font-size: 11px;
 }
 
 @media (max-width: 1024px) {
