@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useBLE } from "./useBLE";
 import { LinePlot } from "./LinePlot";
 import { BarPlot } from "./BarPlot";
@@ -39,6 +39,15 @@ function App() {
     device?.characteristics.filter(
       (characteristic) => characteristic.group === "mems",
     ) || [];
+
+  // Keep sidebar values in sync with the exact stream used by plots.
+  const latestValueBySensor = useMemo(() => {
+    const map = new Map<string, number>();
+    dataPoints.forEach((point) => {
+      map.set(point.sensorId, point.y);
+    });
+    return map;
+  }, [dataPoints]);
 
   const renderPlot = (
     points: typeof dataPoints,
@@ -158,7 +167,11 @@ function App() {
                     <div key={char.uuid} className="characteristic-item">
                       <span className="char-name">{char.name}</span>
                       <span className="char-value">
-                        {char.value !== null ? char.value.toFixed(4) : "N/A"}
+                        {(latestValueBySensor.get(char.name) ?? char.value) !==
+                        null
+                          ? (latestValueBySensor.get(char.name) ??
+                              char.value)!.toFixed(4)
+                          : "N/A"}
                       </span>
                     </div>
                   ))}
@@ -172,7 +185,11 @@ function App() {
                     <div key={char.uuid} className="characteristic-item">
                       <span className="char-name">{char.name}</span>
                       <span className="char-value">
-                        {char.value !== null ? char.value.toFixed(4) : "N/A"}
+                        {(latestValueBySensor.get(char.name) ?? char.value) !==
+                        null
+                          ? (latestValueBySensor.get(char.name) ??
+                              char.value)!.toFixed(4)
+                          : "N/A"}
                       </span>
                     </div>
                   ))}
