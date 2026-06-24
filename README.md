@@ -174,6 +174,19 @@ const SENSOR_COLORS: Record<string, string> = {
 - Check that sensor is producing data
 - Reload page if issues persist
 
+### "Some sensors/boards are missing (e.g. third MEMS board or BME680 not showing, but firmware serial log shows them)"
+
+This is usually a **stale BLE GATT cache**, not a firmware bug. The OS and/or browser cache a device's service/characteristic table keyed to its Bluetooth address, especially once a bond exists. If you originally paired with the device before newer sensors (or the BLE bonding requirement) were added to the firmware, the browser may keep serving that old, smaller table instead of rediscovering the current one.
+
+To fix:
+
+1. Forget/remove the device from your OS Bluetooth settings (e.g. macOS System Settings → Bluetooth → remove device).
+2. Clear the cached permission in Chrome: visit `chrome://bluetooth-internals/#devices` (or the site's Bluetooth permissions) and remove the device entry.
+3. Fully quit and restart the browser.
+4. Reload the page and reconnect — this forces a fresh pairing and GATT discovery.
+
+To verify it's a cache issue rather than a firmware problem, connect with a tool that's never paired with the device before (e.g. nRF Connect or LightBlue on a phone) and confirm all expected characteristics appear there.
+
 ## Technologies
 
 - **React 19**: UI library with hooks
