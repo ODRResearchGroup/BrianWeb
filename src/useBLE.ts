@@ -76,7 +76,7 @@ export const useBLE = () => {
           { name: 'BRIAN' },
           { name: 'esp32' }
         ],
-        optionalServices: [ESS_SERVICE_UUID, CUSTOM_SERVICE_UUID, TIME_SYNC_CHAR_UUID, 'generic_access', 'generic_attribute']
+        optionalServices: [ESS_SERVICE_UUID, CUSTOM_SERVICE_UUID, 'generic_access', 'generic_attribute']
       });
 
       const server = await bluetoothDevice.gatt?.connect();
