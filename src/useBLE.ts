@@ -76,11 +76,20 @@ export const useBLE = () => {
     }>
   >([]);
   const sampleIndexRef = useRef(0);
+  const attachNotificationListenerRef = useRef<
+    | ((
+        characteristic: BluetoothRemoteGATTCharacteristic,
+        sensorName: string,
+        group: DataGroup,
+        uuid: string,
+      ) => void)
+    | null
+  >(null);
 
   const requestDevice = useCallback(async () => {
     try {
       setError(null);
-      const bluetoothDevice = await (navigator as any).bluetooth.requestDevice({
+      const bluetoothDevice = await navigator.bluetooth.requestDevice({
         filters: [
           { name: "BRIAN" },
           { name: "esp32" },
@@ -116,7 +125,7 @@ export const useBLE = () => {
               timestamp,
             );
             break;
-          } catch (e) {
+          } catch {
             // Continue searching in other services
           }
         }
@@ -209,7 +218,7 @@ export const useBLE = () => {
 
       for (const item of characteristicsToSubscribe) {
         if (item.characteristic) {
-          attachNotificationListener(
+          attachNotificationListenerRef.current?.(
             item.characteristic,
             item.name,
             item.group,
@@ -375,6 +384,8 @@ export const useBLE = () => {
       );
     }
   };
+
+  attachNotificationListenerRef.current = attachNotificationListener;
 
   const disconnect = useCallback(async () => {
     if (device?.id) {

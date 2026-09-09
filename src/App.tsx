@@ -113,19 +113,10 @@ function App() {
 
             <div className="button-group">
               <button
-                onClick={requestDevice}
-                disabled={isConnected}
-                className="btn btn-connect"
+                onClick={isConnected ? disconnect : requestDevice}
+                className={`btn ${isConnected ? "btn-disconnect" : "btn-connect"}`}
               >
-                {isConnected ? "Connected" : "Connect to BLE Device"}
-              </button>
-
-              <button
-                onClick={disconnect}
-                disabled={!isConnected}
-                className="btn btn-disconnect"
-              >
-                Disconnect
+                {isConnected ? "Disconnect" : "Connect to BLE Device"}
               </button>
             </div>
 
