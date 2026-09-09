@@ -89,14 +89,6 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="app">
-        <header className="app-header">
-          <h1>BLE Device Data Plotter</h1>
-          <p>
-            Connect to a Bluetooth Low Energy device and visualize real-time
-            data
-          </p>
-        </header>
-
         <div className="app-content">
           <div className="control-panel">
             <h2>Connection Control</h2>
@@ -134,14 +126,6 @@ function App() {
                 className="btn btn-disconnect"
               >
                 Disconnect
-              </button>
-
-              <button
-                onClick={downloadCSV}
-                disabled={allDataPoints.length === 0}
-                className="btn btn-download"
-              >
-                Download CSV
               </button>
             </div>
 
@@ -217,6 +201,13 @@ function App() {
                 onClick={() => setActiveTab("bar")}
               >
                 Bar Graphs
+              </button>
+              <button
+                onClick={downloadCSV}
+                disabled={allDataPoints.length === 0}
+                className="btn btn-download"
+              >
+                Download CSV
               </button>
             </div>
 

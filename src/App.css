@@ -39,7 +39,7 @@
 }
 
 .app-content {
-  height: calc(100vh - 106px);
+  height: calc(100vh);
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(250px, 292px) minmax(0, 1fr);
@@ -57,6 +57,9 @@
   border: 1px solid var(--ink);
   border-radius: 20px;
   padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .plot-container {
@@ -134,10 +137,6 @@
     transform 0.2s ease;
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
 .btn-connect {
   background: var(--blue);
   color: white;
@@ -155,6 +154,7 @@
 .btn-download {
   background: white;
   color: var(--ink);
+  margin-left: auto;
 }
 .btn-download:hover:not(:disabled) {
   background: #f0f0f0;
@@ -169,7 +169,6 @@
 }
 
 .data-info {
-  max-height: min(400px, 38vh);
   overflow-y: auto;
   padding: 14px;
   background: var(--soft-surface);
@@ -224,6 +223,7 @@
 
 .plot-tabs {
   display: flex;
+  width: 100%;
   gap: 8px;
   margin-bottom: 20px;
   padding-bottom: 10px;
