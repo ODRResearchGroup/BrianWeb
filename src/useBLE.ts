@@ -16,11 +16,21 @@ interface BLEDevice {
   characteristics: BLECharacteristicData[];
 }
 
-// ESS Service UUID
-const ESS_SERVICE_UUID = 0x181a;
+// ESS Service UUID.
+// Use the full 128-bit string form, not the 16-bit numeric alias (0x181A):
+// Bluefy/WebBLE on iOS cannot parse numeric UUIDs in the requestDevice payload
+// and rejects the whole request ("requestDevice request payload could not be
+// parsed"). Chrome accepts both forms, so the string is safe everywhere.
+const ESS_SERVICE_UUID = "0000181a-0000-1000-8000-00805f9b34fb";
 
 // Custom Service UUID
 const CUSTOM_SERVICE_UUID = "de664a17-7db4-449f-97ba-5514e19a9d94";
+
+// Standard GATT services, declared as full 128-bit UUIDs rather than the
+// "generic_access"/"generic_attribute" name aliases, again for Bluefy/WebBLE
+// compatibility.
+const GENERIC_ACCESS_SERVICE_UUID = "00001800-0000-1000-8000-00805f9b34fb";
+const GENERIC_ATTRIBUTE_SERVICE_UUID = "00001801-0000-1000-8000-00805f9b34fb";
 
 // Time Sync Characteristic UUID - update this with your device's time sync characteristic UUID
 const TIME_SYNC_CHAR_UUID = "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"; // Current Time characteristic
@@ -98,8 +108,8 @@ export const useBLE = () => {
         optionalServices: [
           ESS_SERVICE_UUID,
           CUSTOM_SERVICE_UUID,
-          "generic_access",
-          "generic_attribute",
+          GENERIC_ACCESS_SERVICE_UUID,
+          GENERIC_ATTRIBUTE_SERVICE_UUID,
         ],
       });
 
