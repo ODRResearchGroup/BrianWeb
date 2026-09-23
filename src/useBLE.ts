@@ -25,6 +25,24 @@ const CUSTOM_SERVICE_UUID = 'de664a17-7db4-449f-97ba-5514e19a9d94';
 // Time Sync Characteristic UUID - update this with your device's time sync characteristic UUID
 const TIME_SYNC_CHAR_UUID = 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d'; // Current Time characteristic
 
+// Board status characteristic UUID - 1-byte bitmask, read-only, reporting
+// which I2C boards the firmware detected at boot (see BrianHardware
+// CLAUDE.md). Captured once at boot on the device; not a live/notified value.
+const BOARD_STATUS_CHAR_UUID = '407fd299-d6ed-45ed-ab21-437f101c8acd';
+
+export interface BoardStatusEntry {
+  bit: number;
+  label: string;
+  present: boolean;
+}
+
+const BOARD_STATUS_LABELS: Array<{ bit: number; label: string }> = [
+  { bit: 0, label: 'Gas board 1 (HCHO / CH4 / VOC / Odor)' },
+  { bit: 1, label: 'Gas board 2 (EtOH / H2S / NO2 / NH3)' },
+  { bit: 2, label: 'Gas board 3 (CO / Smoke / H2)' },
+  { bit: 3, label: 'BME680 environmental' },
+];
+
 const ESS_UUID_NAME_MAP: Record<string, string> = {
   '00002a6e-0000-1000-8000-00805f9b34fb': 'Temperature (BME680)',
   '00002a6f-0000-1000-8000-00805f9b34fb': 'Humidity (BME680)',
@@ -66,6 +84,7 @@ export const useBLE = () => {
   const [error, setError] = useState<string | null>(null);
   const [dataPoints, setDataPoints] = useState<Array<{ x: number; y: number; sensorId: string; group: DataGroup }>>([]);
   const [allDataPoints, setAllDataPoints] = useState<Array<{ timestamp: number; sensorId: string; group: DataGroup; value: number }>>([]);
+  const [boardStatus, setBoardStatus] = useState<BoardStatusEntry[] | null>(null);
   const sampleIndexRef = useRef(0);
 
   const requestDevice = useCallback(async () => {
@@ -118,9 +137,13 @@ export const useBLE = () => {
         for (const characteristic of discovered) {
           const normalizedUuid = characteristic.uuid.toLowerCase();
 
-          // Time sync is a control characteristic, not a sensor stream.
-          // Keep it out of sensor lists/plots/subscriptions.
-          if (normalizedUuid === TIME_SYNC_CHAR_UUID.toLowerCase()) {
+          // Time sync and board status are control/metadata characteristics,
+          // not sensor streams. Keep them out of sensor lists/plots/subscriptions;
+          // board status is read separately below.
+          if (
+            normalizedUuid === TIME_SYNC_CHAR_UUID.toLowerCase() ||
+            normalizedUuid === BOARD_STATUS_CHAR_UUID.toLowerCase()
+          ) {
             continue;
           }
 
@@ -169,6 +192,23 @@ export const useBLE = () => {
       try {
         const customService = await server.getPrimaryService(CUSTOM_SERVICE_UUID);
         await discoverServiceCharacteristics(customService, 'custom');
+
+        // Board status is captured once at boot on the device and never
+        // changes, so a single read (no notification) is enough.
+        try {
+          const boardStatusChar = await customService.getCharacteristic(BOARD_STATUS_CHAR_UUID);
+          const value = await boardStatusChar.readValue();
+          const statusByte = value.getUint8(0);
+          setBoardStatus(
+            BOARD_STATUS_LABELS.map(({ bit, label }) => ({
+              bit,
+              label,
+              present: (statusByte & (1 << bit)) !== 0
+            }))
+          );
+        } catch (e) {
+          console.warn('Could not read board status characteristic:', e);
+        }
       } catch (e) {
         console.warn('Could not retrieve Custom service:', e);
       }
@@ -312,6 +352,7 @@ export const useBLE = () => {
         setDevice(null);
         setDataPoints([]);
         setAllDataPoints([]);
+        setBoardStatus(null);
         sampleIndexRef.current = 0;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to disconnect');
@@ -352,6 +393,7 @@ export const useBLE = () => {
     isConnected,
     error,
     dataPoints,
+    boardStatus,
     requestDevice,
     disconnect,
     setDataPoints,
