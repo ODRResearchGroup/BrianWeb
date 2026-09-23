@@ -13,6 +13,7 @@ function App() {
     error,
     dataPoints,
     allDataPoints,
+    boardStatus,
     requestDevice,
     disconnect,
     downloadCSV,
@@ -116,6 +117,23 @@ function App() {
             {error && (
               <div className="error-message">
                 <strong>Error:</strong> {error}
+              </div>
+            )}
+
+            {boardStatus && (
+              <div className="characteristics-list">
+                <h3>Hardware Status</h3>
+                {boardStatus.map((board) => (
+                  <div key={board.bit} className="characteristic-item">
+                    <span className="char-name">{board.label}</span>
+                    <span
+                      className="char-value"
+                      style={{ color: board.present ? "#4caf50" : "#f44336" }}
+                    >
+                      {board.present ? "Detected" : "Missing"}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
 
