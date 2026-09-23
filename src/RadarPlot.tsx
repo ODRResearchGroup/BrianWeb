@@ -80,11 +80,23 @@ export const RadarPlot = ({
 
   if (labels.length === 0) {
     return (
-      <div style={{ width: "100%", height: "500px", color: "#999" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          minHeight: "240px",
+          color: "#4b4b4b",
+        }}
+      >
         <p>{emptyMessage}</p>
       </div>
     );
   }
 
-  return <div ref={plotRef} style={{ width: "100%", height: "500px" }} />;
+  return (
+    <div
+      ref={plotRef}
+      style={{ width: "100%", height: "100%", minHeight: "240px" }}
+    />
+  );
 };

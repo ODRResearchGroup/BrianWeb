@@ -90,14 +90,6 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="app">
-        <header className="app-header">
-          <h1>BLE Device Data Plotter</h1>
-          <p>
-            Connect to a Bluetooth Low Energy device and visualize real-time
-            data
-          </p>
-        </header>
-
         <div className="app-content">
           <div className="control-panel">
             <h2>Connection Control</h2>
@@ -139,27 +131,10 @@ function App() {
 
             <div className="button-group">
               <button
-                onClick={requestDevice}
-                disabled={isConnected}
-                className="btn btn-connect"
+                onClick={isConnected ? disconnect : requestDevice}
+                className={`btn ${isConnected ? "btn-disconnect" : "btn-connect"}`}
               >
-                {isConnected ? "Connected" : "Connect to BLE Device"}
-              </button>
-
-              <button
-                onClick={disconnect}
-                disabled={!isConnected}
-                className="btn btn-disconnect"
-              >
-                Disconnect
-              </button>
-
-              <button
-                onClick={downloadCSV}
-                disabled={allDataPoints.length === 0}
-                className="btn btn-download"
-              >
-                Download CSV
+                {isConnected ? "Disconnect" : "Connect to BLE Device"}
               </button>
             </div>
 
@@ -235,6 +210,13 @@ function App() {
                 onClick={() => setActiveTab("bar")}
               >
                 Bar Graphs
+              </button>
+              <button
+                onClick={downloadCSV}
+                disabled={allDataPoints.length === 0}
+                className="btn btn-download"
+              >
+                Download CSV
               </button>
             </div>
 

@@ -338,67 +338,85 @@ export const LinePlot = ({
 
   return (
     <div className="line-plot">
-      {environmentalEntries.length > 0 && (
-        <div className="mems-settling-bar">
-          {environmentalEntries.map(([sensorId, { variance, settled }]) => (
-            <div
-              key={sensorId}
-              className={`mems-settling-badge ${
-                settled
-                  ? "mems-settling-badge--settled"
-                  : "mems-settling-badge--unsettled"
-              }`}
-            >
-              <span className="mems-settling-badge__label">{sensorId}</span>
-              <span
-                className={
-                  settled
-                    ? "mems-settling-badge__status--settled"
-                    : "mems-settling-badge__status--unsettled"
-                }
-              >
-                {settled ? "Settled" : "Unsettled"}
-              </span>
-              {variance !== null && (
-                <span className="mems-settling-badge__variance">
-                  (&sigma;&sup2;&nbsp;=&nbsp;{variance.toFixed(4)})
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      {(environmentalEntries.length > 0 || memsEntries.length > 0) && (
+        <div className="settling-panel">
+          <div className="settling-panel__header">
+            <strong>Signal stability</strong>
+            <span>
+              Settled signals have stabilized; unsettled signals are still
+              changing.
+            </span>
+          </div>
 
-      {memsEntries.length > 0 && (
-        <div className="mems-settling-bar">
-          {memsEntries.map(([sensorId, { variance, settled }]) => (
+          {environmentalEntries.length > 0 && (
             <div
-              key={sensorId}
-              className={`mems-settling-badge ${
-                settled
-                  ? "mems-settling-badge--settled"
-                  : "mems-settling-badge--unsettled"
-              }`}
+              className="mems-settling-bar"
+              aria-label="Environmental signal stability"
             >
-              <span className="mems-settling-badge__label">
-                {formatMemsLabel(sensorId)}
-              </span>
-              <span
-                className={
-                  settled
-                    ? "mems-settling-badge__status--settled"
-                    : "mems-settling-badge__status--unsettled"
-                }
-              >
-                {settled ? "Settled" : "Unsettled"}
-              </span>
-              {variance !== null && (
-                <span className="mems-settling-badge__variance">
-                  (&sigma;&sup2;&nbsp;=&nbsp;{variance.toFixed(4)})
-                </span>
-              )}
+              {environmentalEntries.map(([sensorId, { variance, settled }]) => (
+                <div
+                  key={sensorId}
+                  className={`mems-settling-badge ${
+                    settled
+                      ? "mems-settling-badge--settled"
+                      : "mems-settling-badge--unsettled"
+                  }`}
+                >
+                  <span className="mems-settling-badge__label">{sensorId}</span>
+                  <span
+                    className={
+                      settled
+                        ? "mems-settling-badge__status--settled"
+                        : "mems-settling-badge__status--unsettled"
+                    }
+                  >
+                    {settled ? "Settled" : "Unsettled"}
+                  </span>
+                  {variance !== null && (
+                    <span className="mems-settling-badge__variance">
+                      &sigma;&sup2;&nbsp;{variance.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {memsEntries.length > 0 && (
+            <div
+              className="mems-settling-bar"
+              aria-label="MEMS signal stability"
+            >
+              {memsEntries.map(([sensorId, { variance, settled }]) => (
+                <div
+                  key={sensorId}
+                  className={`mems-settling-badge ${
+                    settled
+                      ? "mems-settling-badge--settled"
+                      : "mems-settling-badge--unsettled"
+                  }`}
+                >
+                  <span className="mems-settling-badge__label">
+                    {formatMemsLabel(sensorId)}
+                  </span>
+                  <span
+                    className={
+                      settled
+                        ? "mems-settling-badge__status--settled"
+                        : "mems-settling-badge__status--unsettled"
+                    }
+                  >
+                    {settled ? "Settled" : "Unsettled"}
+                  </span>
+                  {variance !== null && (
+                    <span className="mems-settling-badge__variance">
+                      &sigma;&sup2;&nbsp;{variance.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div ref={plotRef} className="line-plot__canvas" />
