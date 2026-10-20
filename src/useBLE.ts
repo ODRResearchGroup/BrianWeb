@@ -38,7 +38,7 @@ const TIME_SYNC_CHAR_UUID = "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"; // Current T
 // Board status characteristic UUID - 1-byte bitmask, read-only, reporting
 // which I2C boards the firmware detected at boot (see BrianHardware
 // CLAUDE.md). Captured once at boot on the device; not a live/notified value.
-const BOARD_STATUS_CHAR_UUID = '407fd299-d6ed-45ed-ab21-437f101c8acd';
+const BOARD_STATUS_CHAR_UUID = "407fd299-d6ed-45ed-ab21-437f101c8acd";
 
 export interface BoardStatusEntry {
   bit: number;
@@ -47,10 +47,10 @@ export interface BoardStatusEntry {
 }
 
 const BOARD_STATUS_LABELS: Array<{ bit: number; label: string }> = [
-  { bit: 0, label: 'Gas board 1 (HCHO / CH4 / VOC / Odor)' },
-  { bit: 1, label: 'Gas board 2 (EtOH / H2S / NO2 / NH3)' },
-  { bit: 2, label: 'Gas board 3 (CO / Smoke / H2)' },
-  { bit: 3, label: 'BME680 environmental' },
+  { bit: 0, label: "Gas board 1 (HCHO / CH4 / VOC / Odor)" },
+  { bit: 1, label: "Gas board 2 (EtOH / H2S / NO2 / NH3)" },
+  { bit: 2, label: "Gas board 3 (CO / Smoke / H2)" },
+  { bit: 3, label: "BME680 environmental" },
 ];
 
 const ESS_UUID_NAME_MAP: Record<string, string> = {
@@ -461,10 +461,11 @@ export const useBLE = () => {
   const downloadCSV = useCallback(() => {
     if (allDataPoints.length === 0) return;
 
-    const headers = ["Timestamp", "Date", "Sensor", "Group", "Value"];
+    const headers = ["Timestamp", "Date", "Device", "Sensor", "Group", "Value"];
     const rows = allDataPoints.map((point) => [
       point.timestamp,
       new Date(point.timestamp).toISOString(),
+      device?.name,
       point.sensorId,
       point.group,
       point.value,
@@ -484,7 +485,7 @@ export const useBLE = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [allDataPoints]);
+  }, [allDataPoints, device?.name]);
 
   return {
     device,
