@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
 
 interface LivePlotUpdateArgs {
-  traces: Array<Record<string, any>>;
-  layout: Record<string, any>;
-  updateData: Record<string, any>;
+  traces: Array<Record<string, unknown>>;
+  layout: Record<string, unknown>;
+  updateData: Record<string, unknown>;
   traceIndices: number[];
   forceReact?: boolean;
 }
@@ -45,9 +45,10 @@ export const usePlotlyLive = () => {
   );
 
   useEffect(() => {
+    const plot = plotRef.current;
     return () => {
-      if (plotRef.current && isPlotInitialized.current) {
-        Plotly.purge(plotRef.current);
+      if (plot && isPlotInitialized.current) {
+        Plotly.purge(plot);
         isPlotInitialized.current = false;
       }
     };

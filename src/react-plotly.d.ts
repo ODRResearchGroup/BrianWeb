@@ -19,7 +19,7 @@ declare module 'react-plotly.js' {
       opacity?: number;
       symbol?: string;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface Layout {
@@ -27,12 +27,12 @@ declare module 'react-plotly.js' {
     xaxis?: {
       title?: string;
       type?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     };
     yaxis?: {
       title?: string;
       type?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     };
     hovermode?: string;
     margin?: {
@@ -41,30 +41,30 @@ declare module 'react-plotly.js' {
       t?: number;
       b?: number;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface PlotProps {
     data: PlotData[];
     layout?: Layout;
     style?: React.CSSProperties;
-    config?: any;
-    onInitialized?: (figure: any, graphDiv: HTMLDivElement) => void;
-    onUpdate?: (figure: any, graphDiv: HTMLDivElement) => void;
-    onPurge?: (figure: any, graphDiv: HTMLDivElement) => void;
-    onError?: (error: any) => void;
-    onClick?: (data: any) => void;
-    onHover?: (data: any) => void;
-    onUnhover?: (data: any) => void;
-    onRelayout?: (data: any) => void;
-    onRestyle?: (data: any) => void;
-    onLegendClick?: (data: any) => boolean;
-    onLegendDoubleClick?: (data: any) => boolean;
-    onAutoSize?: (data: any) => void;
-    onBeforeHover?: (data: any) => boolean;
-    onSliderChange?: (data: any) => void;
-    onSliderEnd?: (data: any) => void;
-    onSliderStart?: (data: any) => void;
+    config?: unknown;
+    onInitialized?: (figure: unknown, graphDiv: HTMLDivElement) => void;
+    onUpdate?: (figure: unknown, graphDiv: HTMLDivElement) => void;
+    onPurge?: (figure: unknown, graphDiv: HTMLDivElement) => void;
+    onError?: (error: unknown) => void;
+    onClick?: (data: unknown) => void;
+    onHover?: (data: unknown) => void;
+    onUnhover?: (data: unknown) => void;
+    onRelayout?: (data: unknown) => void;
+    onRestyle?: (data: unknown) => void;
+    onLegendClick?: (data: unknown) => boolean;
+    onLegendDoubleClick?: (data: unknown) => boolean;
+    onAutoSize?: (data: unknown) => void;
+    onBeforeHover?: (data: unknown) => boolean;
+    onSliderChange?: (data: unknown) => void;
+    onSliderEnd?: (data: unknown) => void;
+    onSliderStart?: (data: unknown) => void;
     useResizeHandler?: boolean;
     debug?: boolean;
     className?: string;

@@ -10,6 +10,8 @@ Live Version: https://odrresearchgroup.github.io/BrianWeb/
 - **Real-time Visualization**: Interactive Plotly charts with individual traces for each sensor
 - **Web Bluetooth API**: Direct browser connection to BLE devices (no app needed)
 - **Live Sensor Readout**: Display current values for all connected sensors
+- **Hardware JSON Protocol**: Reads the aggregate sensor JSON notification emitted
+  by the BrianHardware firmware and expands it into individual sensor streams
 - **Type-Safe**: Built with TypeScript
 - **Responsive Design**: Works on desktop and mobile
 - **Fast Development**: Uses Vite for rapid iteration
@@ -37,6 +39,14 @@ All values are transmitted as IEEE 754 32-bit floats (4 bytes).
 - **Reference Implementation**: [ArduinoESP32BLEPeripheral](https://github.com/ODRResearchGroup/ArduinoESP32BLEPeripheral)
 - **Service UUID**: `0x181A` (Environmental Sensing Service)
 - **Custom Service UUID**: `de664a17-7db4-449f-97ba-5514e19a9d94`
+- **Aggregate JSON characteristic**:
+  `9f4c8f2b-5e0a-4b8e-9f0d-6d9a1c2e7b34`
+
+The clients subscribe to the aggregate JSON characteristic rather than relying
+on one notification per sensor. Each payload contains the available sensor
+keys (for example `CH4`, `VOC`, `TempC`, and `GasResOhm`), plus `timestamp`,
+`board_status`, and optional battery data. Missing hardware is therefore
+represented by an absent key.
 
 ## Prerequisites
 

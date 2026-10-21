@@ -76,7 +76,7 @@ export const RadarPlot = ({
       },
       traceIndices: [0],
     });
-  }, [labels, values, deviceName, plotTitle]);
+  }, [labels, values, deviceName, plotTitle, plotRef, renderOrUpdate]);
 
   if (labels.length === 0) {
     return (
