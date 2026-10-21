@@ -93,7 +93,7 @@ export const BarPlot = ({
       },
       traceIndices: [0],
     });
-  }, [labels, values, colors, deviceName, plotTitle]);
+  }, [labels, values, colors, deviceName, plotTitle, plotRef, renderOrUpdate]);
 
   if (labels.length === 0) {
     return (

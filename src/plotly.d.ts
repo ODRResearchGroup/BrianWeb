@@ -16,13 +16,13 @@ declare module 'plotly.js-dist-min' {
       opacity?: number;
       symbol?: string;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface Layout {
     title?: string;
-    xaxis?: Record<string, any>;
-    yaxis?: Record<string, any>;
+    xaxis?: Record<string, unknown>;
+    yaxis?: Record<string, unknown>;
     hovermode?: string;
     margin?: {
       l?: number;
@@ -30,13 +30,13 @@ declare module 'plotly.js-dist-min' {
       t?: number;
       b?: number;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface Config {
     responsive?: boolean;
     displayModeBar?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface Plotly {
@@ -54,12 +54,12 @@ declare module 'plotly.js-dist-min' {
     ): Promise<HTMLElement>;
     update(
       div: HTMLElement | string,
-      data_update?: Record<string, any>,
-      layout_update?: Record<string, any>,
+      data_update?: Record<string, unknown>,
+      layout_update?: Record<string, unknown>,
       traceIndices?: number[]
     ): Promise<HTMLElement>;
     purge(div: HTMLElement | string): void;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   const Plotly: Plotly;

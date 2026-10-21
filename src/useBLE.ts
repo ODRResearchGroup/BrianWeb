@@ -25,6 +25,8 @@ const ESS_SERVICE_UUID = "0000181a-0000-1000-8000-00805f9b34fb";
 
 // Custom Service UUID
 const CUSTOM_SERVICE_UUID = "de664a17-7db4-449f-97ba-5514e19a9d94";
+const SENSOR_DATA_JSON_CHAR_UUID =
+  "9f4c8f2b-5e0a-4b8e-9f0d-6d9a1c2e7b34";
 
 // Standard GATT services, declared as full 128-bit UUIDs rather than the
 // "generic_access"/"generic_attribute" name aliases, again for Bluefy/WebBLE
@@ -85,6 +87,28 @@ const MEMS_ESS_UUIDS = new Set([
 const ENVIRONMENTAL_CUSTOM_UUIDS = new Set([
   "5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9", //: 'Gas Resistance',
 ]);
+
+const JSON_SENSOR_DEFINITIONS: Record<
+  string,
+  { name: string; group: DataGroup }
+> = {
+  CH4: { name: "CH4 (Methane)", group: "mems" },
+  VOC: { name: "VOC (Volatile Organic Compounds)", group: "mems" },
+  NH3: { name: "NH3 (Ammonia)", group: "mems" },
+  NO2: { name: "NO2 (Nitrogen Dioxide)", group: "mems" },
+  HCHO: { name: "HCHO (Formaldehyde)", group: "mems" },
+  Odour: { name: "Odor", group: "mems" },
+  Etoh: { name: "EtOH (Ethanol)", group: "mems" },
+  H2S: { name: "H2S (Hydrogen Sulfide)", group: "mems" },
+  CO: { name: "CO (Carbon Monoxide)", group: "mems" },
+  Smoke: { name: "Smoke", group: "mems" },
+  H2: { name: "H2 (Hydrogen)", group: "mems" },
+  TempC: { name: "Temperature (BME680)", group: "environmental" },
+  PressureHPa: { name: "Pressure (BME680)", group: "environmental" },
+  HumidityPct: { name: "Humidity (BME680)", group: "environmental" },
+  AltitudeM: { name: "Altitude (BME680)", group: "environmental" },
+  GasResOhm: { name: "Gas Resistance", group: "environmental" },
+};
 
 const MAX_PLOT_POINTS = 1000;
 
@@ -176,6 +200,17 @@ export const useBLE = () => {
 
         for (const characteristic of discovered) {
           const normalizedUuid = characteristic.uuid.toLowerCase();
+
+          if (normalizedUuid === SENSOR_DATA_JSON_CHAR_UUID) {
+            characteristicsToSubscribe.push({
+              uuid: normalizedUuid,
+              name: "Sensor data (JSON)",
+              group: "environmental",
+              characteristic,
+              value: null,
+            });
+            continue;
+          }
 
           // Time sync and board status are control/metadata characteristics,
           // not sensor streams. Keep them out of sensor lists/plots/subscriptions;
@@ -332,6 +367,7 @@ export const useBLE = () => {
     group: DataGroup,
     uuid: string,
     rawValue: DataView,
+    timestamp = Date.now(),
   ) => {
     const numValue = parseFloat32(rawValue);
 
@@ -380,8 +416,62 @@ export const useBLE = () => {
 
     setAllDataPoints((prev) => [
       ...prev,
-      { timestamp: Date.now(), sensorId: sensorName, group, value: numValue },
+      { timestamp, sensorId: sensorName, group, value: numValue },
     ]);
+  };
+
+  const recordJsonPayload = (rawValue: DataView) => {
+    const payload = new TextDecoder()
+      .decode(
+        new Uint8Array(
+          rawValue.buffer,
+          rawValue.byteOffset,
+          rawValue.byteLength,
+        ),
+      )
+      .replace(/\0/g, "")
+      .trim();
+
+    let readings: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(payload);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("payload is not a JSON object");
+      }
+      readings = parsed as Record<string, unknown>;
+    } catch (e) {
+      console.error("Failed to parse sensor JSON notification:", e);
+      return;
+    }
+
+    const statusByte = readings.board_status;
+    if (typeof statusByte === "number" && Number.isInteger(statusByte)) {
+      setBoardStatus(
+        BOARD_STATUS_LABELS.map(({ bit, label }) => ({
+          bit,
+          label,
+          present: (statusByte & (1 << bit)) !== 0,
+        })),
+      );
+    }
+    const timestamp =
+      typeof readings.timestamp === "number" &&
+      Number.isFinite(readings.timestamp)
+        ? readings.timestamp * 1000
+        : Date.now();
+
+    Object.entries(JSON_SENSOR_DEFINITIONS).forEach(([key, definition]) => {
+      const value = readings[key];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        recordValue(
+          definition.name,
+          definition.group,
+          `${SENSOR_DATA_JSON_CHAR_UUID}:${key}`,
+          new DataView(new Float32Array([value]).buffer),
+          timestamp,
+        );
+      }
+    });
   };
 
   const attachNotificationListener = (
@@ -390,6 +480,28 @@ export const useBLE = () => {
     group: DataGroup,
     uuid: string,
   ) => {
+    if (uuid === SENSOR_DATA_JSON_CHAR_UUID) {
+      const handleJsonValue = (value: DataView) => recordJsonPayload(value);
+
+      if (characteristic.properties.read) {
+        characteristic.readValue().then(handleJsonValue).catch((e) => {
+          console.warn("Failed to read initial sensor JSON:", e);
+        });
+      }
+
+      if (characteristic.properties.notify) {
+        characteristic.addEventListener("characteristicvaluechanged", (event) => {
+          const value = (event.target as BluetoothRemoteGATTCharacteristic)
+            .value;
+          if (value) handleJsonValue(value);
+        });
+        characteristic.startNotifications().catch((e) => {
+          console.error("Failed to start sensor JSON notifications:", e);
+        });
+      }
+      return;
+    }
+
     if (characteristic.properties.read) {
       characteristic
         .readValue()
