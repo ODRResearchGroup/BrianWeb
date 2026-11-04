@@ -25,6 +25,10 @@ const ESS_SERVICE_UUID = "0000181a-0000-1000-8000-00805f9b34fb";
 
 // Custom Service UUID
 const CUSTOM_SERVICE_UUID = "de664a17-7db4-449f-97ba-5514e19a9d94";
+const GAS_FRAME_CHAR_UUID =
+  "9f4c8f2b-5e0a-4b8e-9f0d-6d9a1c2e7b34";
+const ENV_FRAME_CHAR_UUID =
+  "c2d7a8e1-7f34-4d6b-9a02-1b5e8c4f6d70";
 
 // Standard GATT services, declared as full 128-bit UUIDs rather than the
 // "generic_access"/"generic_attribute" name aliases, again for Bluefy/WebBLE
@@ -74,17 +78,6 @@ const CUSTOM_UUID_NAME_MAP: Record<string, string> = {
   "0176655b-0007-4e02-abc1-e9f2d6815f46": "H2 (Hydrogen)",
   "5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9": "Gas Resistance",
 };
-
-const MEMS_ESS_UUIDS = new Set([
-  "00002bd1-0000-1000-8000-00805f9b34fb",
-  "00002bd3-0000-1000-8000-00805f9b34fb",
-  "00002bcf-0000-1000-8000-00805f9b34fb",
-  "00002bd2-0000-1000-8000-00805f9b34fb",
-]);
-
-const ENVIRONMENTAL_CUSTOM_UUIDS = new Set([
-  "5b0e3c0b-1a44-4b76-82ee-8c2adc2dd8e9", //: 'Gas Resistance',
-]);
 
 const MAX_PLOT_POINTS = 1000;
 
@@ -187,19 +180,18 @@ export const useBLE = () => {
             continue;
           }
 
-          const defaultName = `${serviceType.toUpperCase()} ${normalizedUuid.slice(0, 8)}`;
+          const isGasFrame = normalizedUuid === GAS_FRAME_CHAR_UUID;
+          const isEnvFrame = normalizedUuid === ENV_FRAME_CHAR_UUID;
+          if (!isGasFrame && !isEnvFrame) {
+            continue;
+          }
+
+          const defaultName = isGasFrame ? "Gas frame" : "Environmental frame";
           const nameMap =
             serviceType === "ess" ? ESS_UUID_NAME_MAP : CUSTOM_UUID_NAME_MAP;
           const resolvedName = nameMap[normalizedUuid] || defaultName;
 
-          const group: DataGroup =
-            serviceType === "custom"
-              ? ENVIRONMENTAL_CUSTOM_UUIDS.has(normalizedUuid)
-                ? "environmental"
-                : "mems"
-              : MEMS_ESS_UUIDS.has(normalizedUuid)
-                ? "mems"
-                : "environmental";
+          const group: DataGroup = isEnvFrame ? "environmental" : "mems";
 
           const characteristicData: BLECharacteristicData = {
             uuid: normalizedUuid,
@@ -365,6 +357,7 @@ export const useBLE = () => {
           c.uuid === uuid ? { ...c, value: numValue } : c,
         ),
       };
+
     });
 
     setDataPoints((prev) => {
@@ -384,6 +377,69 @@ export const useBLE = () => {
     ]);
   };
 
+  const recordFrame = (frame: DataView, frameType: "gas" | "env") => {
+    const expectedLength = frameType === "gas" ? 58 : 29;
+    if (frame.byteLength !== expectedLength || frame.getUint8(0) !== 1) {
+      throw new Error(`Invalid ${frameType} frame length or version`);
+    }
+
+    const flags = frame.getUint8(1);
+    const timestamp = frame.getUint32(4, true);
+    const mask =
+      frameType === "gas" ? frame.getUint16(8, true) : frame.getUint8(8);
+    const slots =
+      frameType === "gas"
+        ? [
+            ["HCHO (Formaldehyde)", "mems"],
+            ["CH4 (Methane)", "mems"],
+            ["VOC (Volatile Organic Compounds)", "mems"],
+            ["Odor", "mems"],
+            ["EtOH (Ethanol)", "mems"],
+            ["H2S (Hydrogen Sulfide)", "mems"],
+            ["NO2 (Nitrogen Dioxide)", "mems"],
+            ["NH3 (Ammonia)", "mems"],
+            ["CO (Carbon Monoxide)", "mems"],
+            ["Smoke", "mems"],
+            ["H2 (Hydrogen)", "mems"],
+          ]
+        : [
+            ["Temperature (BME680)", "environmental"],
+            ["Pressure (BME680)", "environmental"],
+            ["Humidity (BME680)", "environmental"],
+            ["Gas Resistance", "environmental"],
+            ["Altitude (BME680)", "environmental"],
+          ];
+    const offset = frameType === "gas" ? 10 : 9;
+    const pointTimestamp = flags & 1 ? timestamp * 1000 : Date.now();
+
+    slots.forEach(([sensorName, group], index) => {
+      if ((mask & (1 << index)) === 0) return;
+      const value = frame.getFloat32(offset + index * 4, true);
+      if (!Number.isFinite(value)) return;
+      setDataPoints((prev) => {
+        const nextSampleIndex = sampleIndexRef.current++;
+        return [
+          ...prev,
+          {
+            x: nextSampleIndex,
+            y: value,
+            sensorId: sensorName,
+            group: group as DataGroup,
+          },
+        ].slice(-MAX_PLOT_POINTS);
+      });
+      setAllDataPoints((prev) => [
+        ...prev,
+        {
+          timestamp: pointTimestamp,
+          sensorId: sensorName,
+          group: group as DataGroup,
+          value,
+        },
+      ]);
+    });
+  };
+
   const attachNotificationListener = (
     characteristic: BluetoothRemoteGATTCharacteristic,
     sensorName: string,
@@ -394,7 +450,11 @@ export const useBLE = () => {
       characteristic
         .readValue()
         .then((value) => {
-          recordValue(sensorName, group, uuid, value);
+          if (uuid === GAS_FRAME_CHAR_UUID || uuid === ENV_FRAME_CHAR_UUID) {
+            recordFrame(value, uuid === GAS_FRAME_CHAR_UUID ? "gas" : "env");
+          } else {
+            recordValue(sensorName, group, uuid, value);
+          }
         })
         .catch((e) => {
           console.warn(`Failed to read initial value for ${sensorName}:`, e);
@@ -408,7 +468,15 @@ export const useBLE = () => {
           const value = (event.target as BluetoothRemoteGATTCharacteristic)
             .value;
           if (value) {
-            recordValue(sensorName, group, uuid, value);
+            try {
+              if (uuid === GAS_FRAME_CHAR_UUID || uuid === ENV_FRAME_CHAR_UUID) {
+                recordFrame(value, uuid === GAS_FRAME_CHAR_UUID ? "gas" : "env");
+              } else {
+                recordValue(sensorName, group, uuid, value);
+              }
+            } catch (e) {
+              console.error(`Invalid BLE frame for ${sensorName}:`, e);
+            }
           }
         },
       );

@@ -32,22 +32,22 @@ function App() {
   );
   const memsData = dataPoints.filter((point) => point.group === "mems");
 
-  const environmentalCharacteristics =
-    device?.characteristics.filter(
-      (characteristic) => characteristic.group === "environmental",
-    ) || [];
-  const memsCharacteristics =
-    device?.characteristics.filter(
-      (characteristic) => characteristic.group === "mems",
-    ) || [];
-
-  // Keep sidebar values in sync with the exact stream used by plots.
-  const latestValueBySensor = useMemo(() => {
-    const map = new Map<string, number>();
+  const latestSensorsByGroup = useMemo(() => {
+    const sensors = new Map<string, { name: string; value: number }>();
     dataPoints.forEach((point) => {
-      map.set(point.sensorId, point.y);
+      sensors.set(`${point.group}:${point.sensorId}`, {
+        name: point.sensorId,
+        value: point.y,
+      });
     });
-    return map;
+    return {
+      environmental: Array.from(sensors.entries())
+        .filter(([key]) => key.startsWith("environmental:"))
+        .map(([, sensor]) => sensor),
+      mems: Array.from(sensors.entries())
+        .filter(([key]) => key.startsWith("mems:"))
+        .map(([, sensor]) => sensor),
+    };
   }, [dataPoints]);
 
   const renderPlot = (
@@ -153,36 +153,28 @@ function App() {
                 <strong>MEMS Points:</strong> {memsData.length}
               </p>
 
-              {environmentalCharacteristics.length > 0 && (
+              {latestSensorsByGroup.environmental.length > 0 && (
                 <div className="characteristics-list">
                   <h3>BME680 Environmental</h3>
-                  {environmentalCharacteristics.map((char) => (
-                    <div key={char.uuid} className="characteristic-item">
-                      <span className="char-name">{char.name}</span>
+                  {latestSensorsByGroup.environmental.map((sensor) => (
+                    <div key={sensor.name} className="characteristic-item">
+                      <span className="char-name">{sensor.name}</span>
                       <span className="char-value">
-                        {(latestValueBySensor.get(char.name) ?? char.value) !==
-                        null
-                          ? (latestValueBySensor.get(char.name) ??
-                              char.value)!.toFixed(4)
-                          : "N/A"}
+                        {sensor.value.toFixed(4)}
                       </span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {memsCharacteristics.length > 0 && (
+              {latestSensorsByGroup.mems.length > 0 && (
                 <div className="characteristics-list">
                   <h3>MEMS Gas Sensors</h3>
-                  {memsCharacteristics.map((char) => (
-                    <div key={char.uuid} className="characteristic-item">
-                      <span className="char-name">{char.name}</span>
+                  {latestSensorsByGroup.mems.map((sensor) => (
+                    <div key={sensor.name} className="characteristic-item">
+                      <span className="char-name">{sensor.name}</span>
                       <span className="char-value">
-                        {(latestValueBySensor.get(char.name) ?? char.value) !==
-                        null
-                          ? (latestValueBySensor.get(char.name) ??
-                              char.value)!.toFixed(4)
-                          : "N/A"}
+                        {sensor.value.toFixed(4)}
                       </span>
                     </div>
                   ))}

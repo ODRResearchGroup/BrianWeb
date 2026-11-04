@@ -6,7 +6,7 @@ Live Version: https://odrresearchgroup.github.io/BrianWeb/
 
 ## Features
 
-- **Multi-Sensor Support**: Simultaneously reads data from 8 different gas sensors via BLE
+- **Multi-Sensor Support**: Decodes bundled gas and environmental BLE frames
 - **Real-time Visualization**: Interactive Plotly charts with individual traces for each sensor
 - **Web Bluetooth API**: Direct browser connection to BLE devices (no app needed)
 - **Live Sensor Readout**: Display current values for all connected sensors
@@ -16,20 +16,22 @@ Live Version: https://odrresearchgroup.github.io/BrianWeb/
 
 ## Supported Sensors
 
-Reads from the following Environmental Sensing Service (ESS) characteristics:
+Reads two fixed binary notification frames from the custom service:
 
-| Sensor | UUID   | Reading                    |
-| ------ | ------ | -------------------------- |
-| CH4    | 0x2BD1 | Methane concentration      |
-| VOC    | 0x2BD3 | Volatile Organic Compounds |
-| NH3    | 0x2BDB | Ammonia concentration      |
-| NO2    | 0x2BDC | Nitrogen Dioxide           |
-| HCHO   | 0x2BDF | Formaldehyde concentration |
-| Odor   | 0x2BE3 | Odor level                 |
-| EtOH   | 0x2BE4 | Ethanol concentration      |
-| H2S    | 0x2BE5 | Hydrogen Sulfide           |
+| Frame | UUID | Length |
+| --- | --- | --- |
+| Gas | `9f4c8f2b-5e0a-4b8e-9f0d-6d9a1c2e7b34` | 58 bytes |
+| Environmental | `c2d7a8e1-7f34-4d6b-9a02-1b5e8c4f6d70` | 29 bytes |
 
-All values are transmitted as IEEE 754 32-bit floats (4 bytes).
+Both frames contain an 8-byte little-endian header with version, flags, cycle
+counter, and timestamp. Gas values are volts; environmental values are
+temperature, pressure, humidity, gas resistance, and altitude. Presence masks
+identify missing sensors. The web client joins both frames by cycle counter and
+plots the individual values.
+
+Battery percentage remains on the standard Battery Service
+(`0x180F` / `0x2A19`), while board detection is read from the boot-time board
+status characteristic.
 
 ## Hardware Compatibility
 
